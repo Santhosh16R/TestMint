@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jump</title>
+</head>
+<body>
+    <button class="enableEthereumButton">Enable metamask</button>
+    <h2>Account: <span class="showAccount"></span></h2>
+    <script type="module">
+        const ethereumButton = document.querySelector('.enableEthereumButton');
+        const showAccount = document.querySelector('.showAccount');
+        ethereumButton.addEventListener('click', () => {
+        getAccount();
+        });
+
+async function getAccount() {
+  // Update the chain ID to Rinkeby (4)
+  const chainId = '65';
+  try {
+    await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
+  } catch (switchError) {
+    // This error code indicates that the chain has not been added to MetaMask.
+    if (switchError.code === 4902) {
+      try {
+        await ethereum.request({ method: 'wallet_addEthereumChain', params: [{
+          chainId,
+          rpcUrl: 'https://exchaintestrpc.okex.org',
+          chainName: 'OKX',
+          nativeCurrency: {
+            name: 'OKT',
+            symbol: 'OKT',
+            decimals: 18
+          }
+        }]});
+      } catch (addError) {
+        console.error(addError);
+      }
+    }
+  }
+  // Get the current accounts
+  const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+  const account = accounts[0];
+  showAccount.innerHTML = account;
+}
+import { ethers } from "https://cdn.ethers.io/lib/ethers-5.2.esm.min.js";
+(async ()=>{
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+
+// Set up the contract interface
+const contractAddress = '0x...'; // Replace with your contract address
+const contractABI = [
+{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "uri",
+				"type": "string"
+			}
+		],
+		"name": "safeMint",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	}
+]; 
+const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+// Call the safeMint function to mint a new NFT
+const toAddress = ''; // Replace with the address to receive the new NFT
+const uri = ''; // Replace with the URI of the new NFT
+const mintPrice = ethers.utils.parseEther('0.000001'); // Convert mint price to wei
+const overrides = { value: 0.00001 }; // Include the mint price in the transaction
+
+const tx = await contract.safeMint(toAddress, uri, overrides);
+const receipt = await tx.wait();
+
+console.log('New NFT minted with token ID:', receipt.events[0].args.tokenId.toString());
+})()
+    </script>
+</body>
+</html>
